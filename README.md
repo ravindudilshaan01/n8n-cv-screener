@@ -23,7 +23,25 @@ and outputs structured results to Google Sheets.
 2. New Workflow → Import from file
 3. Select `List CV Uploads.json`
 4. Add your Google credentials
-5. Run
+5. Set environment variable: `GEMINI_API_KEY`
+6. Run
+
+## Setup Credentials
+
+### Gemini API Key
+1. Get your API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
+2. Create a `.env` file in this directory:
+   ```
+   GEMINI_API_KEY=your_key_here
+   ```
+3. n8n will read this on workflow execution
+
+### Google Drive & Sheets
+Configure these OAuth2 credentials in n8n:
+- Go to **Credentials** → New → Google Drive OAuth2 API
+- Go to **Credentials** → New → Google Sheets OAuth2 API
+
+Do NOT commit `.env` files or API keys to Git. Use `.env.example` as a template.
 
 ## Screenshot
 ![CV Screener Workflow](Screenshot.png)
