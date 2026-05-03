@@ -26,4 +26,4 @@ and outputs structured results to Google Sheets.
 5. Run
 
 ## Screenshot
-[add a screenshot of the workflow canvas here]
+![CV Screener Workflow](Screenshot.png)
