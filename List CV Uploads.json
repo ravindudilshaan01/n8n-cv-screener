@@ -1,0 +1,391 @@
+{
+  "name": "List CV Uploads",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "5964d9a1-bc3e-4333-a82b-43531604f17a",
+      "name": "Manual Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        240,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1p7s9zkFaMqWffhsVntSSrxyH8pPY6uXL",
+            "mode": "list",
+            "cachedResultName": "CV Uploads",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1p7s9zkFaMqWffhsVntSSrxyH8pPY6uXL"
+          }
+        },
+        "options": {}
+      },
+      "id": "0ad3c0ce-a8e2-4a77-bfa4-b0d5d0126872",
+      "name": "List Files from CV Uploads",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        464,
+        304
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "26iQNQ0bLZ9VhYKl",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "id": "bd19b5b2-955e-48bd-bedf-6759a79a0538",
+      "name": "Done Processing",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        912,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyBS3UHGMfnLJPtBjieZCN_mBkIyrhnjam8",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { \"contents\": [{ \"parts\": [{ \"text\": \"You are a technical recruiter. Analyze this CV:\\n\\n\" + $json.text + \"\\n\\nJob Description:\\nRole: Software Engineer Intern AI/ML\\nRequired: Python, FastAPI/Django, JavaScript, React, n8n, OpenAI API, Google Gemini API, Git\\nBonus: Twilio or telephony APIs\\n\\nReturn ONLY this exact JSON with no markdown:\\n{\\\"candidate_name\\\": \\\"name\\\", \\\"match_score\\\": 0-100, \\\"matched_skills\\\": [\\\"skill\\\"], \\\"missing_skills\\\": [\\\"skill\\\"], \\\"summary\\\": \\\"2 sentences\\\"}\" }] }] } }}",
+        "options": {}
+      },
+      "id": "0e2912c7-fcb6-4468-92b6-2869c44377ca",
+      "name": "Call Gemini API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1360,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const responseText = $input.item.json.candidates[0].content.parts[0].text;\nconst cleaned = responseText.replace(/```json|```/g, \"\").trim();\nconst parsed = JSON.parse(cleaned);\n\nreturn {\n  json: {\n    candidateName: parsed.candidate_name,\n    matchScore: parsed.match_score,\n    matchedSkills: parsed.matched_skills.join(\", \"),\n    missingSkills: parsed.missing_skills.join(\", \"),\n    summary: parsed.summary,\n    timestamp: new Date().toISOString()\n  }\n};"
+      },
+      "id": "99abd786-fd9e-4de0-a19a-0924c634f93f",
+      "name": "Parse Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1808,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1P3sTnTIzN_EO-AWCPa46i3_1YjlyMG8wkEZ7uY0LdHA/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1P3sTnTIzN_EO-AWCPa46i3_1YjlyMG8wkEZ7uY0LdHA/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Candidate Name": "={{ $json.candidateName }}",
+            "Match Score": "={{ $json.matchScore }}",
+            "Matched Skills": "={{ $json.matchedSkills }}",
+            "Missing Skills": "={{ $json.missingSkills }}",
+            "Summary": "={{ $json.summary }}",
+            "Timestamp": "={{ $json.timestamp }}"
+          },
+          "matchingColumns": [
+            "Candidate Name"
+          ],
+          "schema": [
+            {
+              "id": "Candidate Name",
+              "displayName": "Candidate Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Match Score",
+              "displayName": "Match Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Matched Skills",
+              "displayName": "Matched Skills",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Missing Skills",
+              "displayName": "Missing Skills",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Summary",
+              "displayName": "Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Timestamp",
+              "displayName": "Timestamp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "9d1fd2b4-121d-4a95-80f9-613fe74a9999",
+      "name": "Append to Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2032,
+        384
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "x1CYG0KiLCo7QvYP",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "aa3d4b45-3ae2-42fd-ae5f-21ba4f273ece",
+      "name": "Loop Over Items",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        688,
+        304
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "0912ae5d-75fe-4044-bbcb-2822ec4c1832",
+      "name": "Wait 5 Seconds",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1584,
+        304
+      ],
+      "webhookId": "b73b315d-a615-4e48-8ec6-659e5ed83673"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $json.id }}"
+        },
+        "options": {
+          "binaryPropertyName": "data"
+        }
+      },
+      "id": "a089c3b1-1b6b-448a-b8b5-7fc710799456",
+      "name": "Download PDF",
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        912,
+        304
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "26iQNQ0bLZ9VhYKl",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {
+          "joinPages": true,
+          "maxPages": 0
+        }
+      },
+      "id": "4717c8d6-80e9-493e-8857-12cc24d8d838",
+      "name": "Extract Text from PDF",
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1136,
+        304
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger": {
+      "main": [
+        [
+          {
+            "node": "List Files from CV Uploads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "List Files from CV Uploads": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Gemini API": {
+      "main": [
+        [
+          {
+            "node": "Wait 5 Seconds",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Response": {
+      "main": [
+        [
+          {
+            "node": "Append to Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append to Sheets": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [
+          {
+            "node": "Done Processing",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 5 Seconds": {
+      "main": [
+        [
+          {
+            "node": "Parse Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download PDF": {
+      "main": [
+        [
+          {
+            "node": "Extract Text from PDF",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Text from PDF": {
+      "main": [
+        [
+          {
+            "node": "Call Gemini API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "65d8a901-d265-459b-9687-2af9da87cf7f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6777d85330474f205e314b2c84d095f8a8e01931f53806b9457abe51fb19aa21"
+  },
+  "id": "XjuIGu50oWomhSRr",
+  "tags": []
+}
